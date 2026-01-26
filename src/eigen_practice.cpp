@@ -109,7 +109,12 @@ void ConvertPosAtt() {
 }
 
 void AngleAxis() {
-  Eigen::AngleAxis<double> rotation_vector(M_PI / 4.0, Eigen::Vector3d::UnitZ());
+  // C_b^n b n 开始时重合 b执行旋转
+  Eigen::AngleAxis<double> rotation_vector(M_PI / 2.0, Eigen::Vector3d::UnitZ());
+  Eigen::Vector3d point(1, 0, 0);
+  LOG_INFO("旋转前的点坐标: [{}, {}, {}]", point(0), point(1), point(2));
+  Eigen::Vector3d rotated_point = rotation_vector * point;
+  LOG_INFO("旋转后的点坐标: [{}, {}, {}]", rotated_point(0), rotated_point(1), rotated_point(2));
 }
 
 }  // namespace eigen_practice

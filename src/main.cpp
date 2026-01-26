@@ -21,6 +21,7 @@ int main(int argc, char const* argv[]) {
   eigen_practice::InitVectorAndMatrix();
   eigen_practice::VisitVectorAndMatrix();
   eigen_practice::ConvertPosAtt();
+  eigen_practice::AngleAxis();
   // 程序结束前（可选但推荐）
   spdlog::shutdown();
   return 0;

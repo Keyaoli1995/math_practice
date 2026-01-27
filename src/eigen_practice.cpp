@@ -117,4 +117,32 @@ void AngleAxis() {
   LOG_INFO("旋转后的点坐标: [{}, {}, {}]", rotated_point(0), rotated_point(1), rotated_point(2));
 }
 
+void IsometryUsage() {
+    // 1. 初始化：创建一个单位变换矩阵 (Identity)
+    Eigen::Isometry3d T = Eigen::Isometry3d::Identity();
+
+    // 2. 旋转部分：可以使用旋转向量、四元数或旋转矩阵
+    Eigen::AngleAxisd rv(M_PI_2, Eigen::Vector3d::UnitZ());
+    T.rotate(rv);  // 相当于在 T 内部设置了旋转部分
+
+    // 3. 平移部分：直接传入一个 Vector3d
+    T.pretranslate(Eigen::Vector3d(1.0, 2.0, 3.0));
+    // T.translate(Eigen::Vector3d(1.0, 2.0, 3.0));
+    // 注意：pretranslate 是在左侧乘，translate 是在右侧乘，SLAM 中常用 pretranslate
+
+    // 4. 访问提取
+    Eigen::Matrix3d R = T.rotation();     // 提取旋转
+    Eigen::Vector3d t = T.translation();  // 提取平移
+    LOG_INFO("T的旋转部分 R = [{}, {}, {}]", R(0, 0), R(0, 1), R(0, 2));
+    LOG_INFO("               [{}, {}, {}]", R(1, 0), R(1, 1), R(1, 2));
+    LOG_INFO("               [{}, {}, {}]", R(2, 0), R(2, 1), R(2, 2));
+    LOG_INFO("T的平移部分 t = [{}, {}, {}]", t(0), t(1), t(2));
+
+    // 5. 坐标变换：直接乘向量，不需要手动转齐次坐标！
+    Eigen::Vector3d p_a(1, 0, 0);
+    LOG_INFO("旋转前的点坐标: [{}, {}, {}]", p_a(0), p_a(1), p_a(2));
+    Eigen::Vector3d p_w = T * p_a;  // Eigen 底层自动帮你处理了 Rp + t
+    LOG_INFO("旋转后的点坐标: [{}, {}, {}]", p_w(0), p_w(1), p_w(2));
+}
+
 }  // namespace eigen_practice

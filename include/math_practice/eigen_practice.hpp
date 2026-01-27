@@ -7,6 +7,7 @@ void InitVectorAndMatrix();
 void VisitVectorAndMatrix();
 void ConvertPosAtt();
 void AngleAxis();
+void IsometryUsage();
 }
 
 #endif

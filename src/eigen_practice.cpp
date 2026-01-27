@@ -110,11 +110,43 @@ void ConvertPosAtt() {
 
 void AngleAxis() {
   // C_b^n b n 开始时重合 b执行旋转
-  Eigen::AngleAxis<double> rotation_vector(M_PI / 2.0, Eigen::Vector3d::UnitZ());
+  Eigen::AngleAxis<double> rotation_vector(M_PI / 2.0,
+                                           Eigen::Vector3d::UnitZ());
   Eigen::Vector3d point(1, 0, 0);
   LOG_INFO("旋转前的点坐标: [{}, {}, {}]", point(0), point(1), point(2));
   Eigen::Vector3d rotated_point = rotation_vector * point;
-  LOG_INFO("旋转后的点坐标: [{}, {}, {}]", rotated_point(0), rotated_point(1), rotated_point(2));
+  LOG_INFO("旋转后的点坐标: [{}, {}, {}]", rotated_point(0), rotated_point(1),
+           rotated_point(2));
+  // 构造方式2
+  Eigen::Vector3d vec(0, 0, 5);
+  Eigen::AngleAxisd rotation_vector_1(M_PI_2, vec.normalized());
+  Eigen::Vector3d rotated_point_1 = rotation_vector_1 * point;
+  LOG_INFO("旋转后的点坐标: [{}, {}, {}]", rotated_point_1(0),
+           rotated_point_1(1), rotated_point_1(2));
+}
+
+void Quaternion() {
+  // 通过矩阵构造四元数
+  Eigen::Matrix3d m1 = Eigen::Matrix3d::Identity();
+  Eigen::Quaterniond q1(m1);
+  LOG_INFO("通过3维单位阵构造的四元数q1 = [{}, {}, {}, {}]", q1.coeffs()(0),
+           q1.coeffs()(1), q1.coeffs()(2), q1.coeffs()(3));
+  // 通过构造函数直接将w x y z赋值给四元数
+  Eigen::Quaternion<double> q2(1, 0, 0, 0);
+  // 通过旋转矢量构造四元数
+  // 1. 定义旋转轴 (必须是单位向量) 和 旋转角度 (弧度)
+  Eigen::Vector3d axis(0, 0, 1);  // 绕 Z 轴
+  double angle = M_PI_2;          // 旋转 90 度
+  // 2. 构造 AngleAxis 对象
+  Eigen::AngleAxisd rotation_vector(angle, axis);
+  // 3. 转换为四元数
+  Eigen::Quaterniond q3(rotation_vector);
+  Eigen::Vector3d point(1, 0, 0);
+  LOG_INFO("旋转前的点坐标: [{}, {}, {}]", point(0), point(1), point(2));
+  Eigen::Vector3d rotated_point = q3 * point;
+  LOG_INFO("旋转后的点坐标: [{}, {}, {}]", rotated_point(0), rotated_point(1),
+           rotated_point(2));
+  
 }
 
 void IsometryUsage() {

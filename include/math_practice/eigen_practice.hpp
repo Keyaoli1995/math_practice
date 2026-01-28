@@ -1,14 +1,18 @@
 #ifndef EIGEN_PRACTICE_EIGEN_PRACTICE_HPP_
 #define EIGEN_PRACTICE_EIGEN_PRACTICE_HPP_
 #include <Eigen/Dense>
+#include <string>
 
 namespace eigen_practice {
 void InitVectorAndMatrix();
 void VisitVectorAndMatrix();
 void ConvertPosAtt();
-void AngleAxis();
+void AngleAxisUsage();
 void IsometryUsage();
-void Quaternion();
-}
+void QuaternionUsage();
+void LuDecompositionUsage();
+void QRDecompositionUsage();
+void SVDDecompositionUsage();
+}  // namespace eigen_practice
 
 #endif

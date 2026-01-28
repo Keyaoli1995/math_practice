@@ -15,18 +15,24 @@ find_package(spdlog REQUIRED)
 include_directories(include)
 
 # 3. 编译库 (Library)
-add_library(math_practice_lib src/eigen_practice.cpp)
+add_library(math_practice_lib 
+src/math_practice/eigen_practice.cpp
+src/math_practice/nonlinear_optimization.cpp
+)
 target_link_libraries(math_practice_lib PUBLIC Eigen3::Eigen spdlog::spdlog)
 
 # 4. 编译可执行文件 (Executable)
-add_executable(math_practice_node src/main.cpp)
-target_link_libraries(math_practice_node math_practice_lib)
+add_executable(eigen_practice_node src/main_eigen.cpp)
+target_link_libraries(eigen_practice_node math_practice_lib)
 
+add_executable(nonlinear_optimization_node src/main_nonlinear_optimization.cpp)
+target_link_libraries(nonlinear_optimization_node math_practice_lib)
 # --- 5. Install 逻辑开始 ---
 
 # 安装可执行文件到 lib/math_practice 目录下
 install(TARGETS
-  math_practice_node
+  eigen_practice_node
+  nonlinear_optimization_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

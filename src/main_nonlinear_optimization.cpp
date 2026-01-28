@@ -21,6 +21,7 @@ int main(int argc, char const* argv[]) {
   spdlog::info("Initialize logger system success.");
 
   nonlinear_optimization::GradientDescentUsage();
+  nonlinear_optimization::NewTonUsage();
 
   // 程序结束前（可选但推荐）
   spdlog::shutdown();

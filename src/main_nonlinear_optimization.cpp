@@ -22,6 +22,7 @@ int main(int argc, char const* argv[]) {
 
   nonlinear_optimization::GradientDescentUsage();
   nonlinear_optimization::NewTonUsage();
+  nonlinear_optimization::GaussNewtonUsage();
 
   // 程序结束前（可选但推荐）
   spdlog::shutdown();

@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(Ceres REQUIRED)
 
 # 2. 定义头文件目录
 # 让本项目和依赖本项目的其他包都能找到头文件
@@ -19,7 +20,7 @@ add_library(math_practice_lib
 src/math_practice/eigen_practice.cpp
 src/math_practice/nonlinear_optimization.cpp
 )
-target_link_libraries(math_practice_lib PUBLIC Eigen3::Eigen spdlog::spdlog)
+target_link_libraries(math_practice_lib PUBLIC Eigen3::Eigen spdlog::spdlog Ceres::ceres)
 
 # 4. 编译可执行文件 (Executable)
 add_executable(eigen_practice_node src/main_eigen.cpp)

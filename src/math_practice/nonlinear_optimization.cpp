@@ -76,7 +76,7 @@ void NewTonUsage() {
   }
 
   // 2. 牛顿法参数初始化
-  double a_est = 0.0;   // 初始猜测
+  double a_est = 0.0;    // 初始猜测
   int iterations = 100;  // 注意：牛顿法收敛极快，通常 10 次就够了
 
   LOG_INFO("开始牛顿法优化: 初始参数 a: {}, 迭代总数: {}", a_est, iterations);
@@ -120,6 +120,63 @@ void NewTonUsage() {
 
   LOG_INFO("牛顿法优化完成! 最终估计 a: {}, 真值对比: {}, 误差偏移: {}", a_est,
            a_true, std::abs(a_est - a_true));
+}
+
+void GaussNewtonUsage() {
+  // 1. 生成数据 (真值 a = 0.8)
+  double a_true = 0.8;
+  std::vector<double> x_data, y_data;
+  for (int i = 0; i < 100; ++i) {
+    double x = i / 100.0;
+    x_data.push_back(x);
+    y_data.push_back(std::exp(a_true * x) + 0.01 * rand() / double(RAND_MAX));
+  }
+
+  // 2. 高斯-牛顿参数初始化
+  double a_est = 0.0;
+  int iterations = 10;
+
+  LOG_INFO("开始高斯-牛顿法优化: 初始参数 a: {}, 迭代总数: {}", a_est,
+           iterations);
+
+  for (int iter = 0; iter < iterations; ++iter) {
+    // 在 GN 中，我们习惯称 J^T * J 为 H (近似 Hessian)
+    double H = 0;
+    double g = 0;  // 梯度 g = J^T * f
+    double total_cost = 0;
+
+    for (size_t i = 0; i < x_data.size(); ++i) {
+      double x = x_data[i];
+      double y = y_data[i];
+
+      double exp_ax = std::exp(a_est * x);
+      double error = exp_ax - y;
+
+      // 计算 Jacobian (残差对 a 的导数)
+      double J = x * exp_ax;
+
+      // 核心公式：H = J * J^T, g = -J * error
+      H += J * J;
+      g += -J * error;
+
+      total_cost += 0.5 * error * error;
+    }
+
+    // 3. 求解线性方程组 H * da = g (这里 H 只是个标量，直接除就行)
+    // 在 SLAM 复杂问题中，这里会用到你学过的 QR 或 SVD 分解
+    double da = g / H;
+
+    // 4. 更新
+    a_est += da;
+
+    LOG_INFO("迭代轮次: {}, 当前参数 a: {}, 增量 da: {}, 当前总误差 Cost: {}",
+             iter, a_est, da, total_cost);
+
+    if (std::abs(da) < 1e-8) break;
+  }
+
+  LOG_INFO("高斯-牛顿优化完成! 最终估计 a: {}, 真值对比: {}, 误差偏移: {}",
+           a_est, a_true, std::abs(a_est - a_true));
 }
 
 }  // namespace nonlinear_optimization

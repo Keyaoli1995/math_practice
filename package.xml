@@ -8,8 +8,9 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>eigen</build_depend>
-  <build_depend>spdlog</build_depend>
+  <depend>eigen</depend>
+  <depend>spdlog</depend>
+  <depend>Ceres</depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -28,6 +28,8 @@ struct ExponentialResidual {
 void GradientDescentUsage();
 void NewTonUsage();
 void GaussNewtonUsage();
+void LevenbergMarquardtUsage();
+void CeresSolverUsage();
 }  // namespace nonlinear_optimization
 
 #endif  // MATH_PRACTICE_NONLINEAR_OPTIMIZATION_HPP_

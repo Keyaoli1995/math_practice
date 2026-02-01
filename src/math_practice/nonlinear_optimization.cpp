@@ -179,4 +179,137 @@ void GaussNewtonUsage() {
            a_est, a_true, std::abs(a_est - a_true));
 }
 
+void LevenbergMarquardtUsage() {
+  // 1. 数据准备
+  double a_true = 0.8;
+  std::vector<double> x_data, y_data;
+  srand(42);
+  for (int i = 0; i < 100; ++i) {
+    double x = i / 100.0;
+    x_data.push_back(x);
+    y_data.push_back(std::exp(a_true * x) + 0.01 * rand() / double(RAND_MAX));
+  }
+
+  // 2. LM 参数初始化
+  double a_est = 0.0;
+  double lambda = 1e-3;
+  int max_iterations = 100;
+
+  LOG_INFO("开始精细化 LM 算法优化: 初始 a: {}, 初始 lambda: {}", a_est,
+           lambda);
+
+  for (int iter = 0; iter < max_iterations; ++iter) {
+    // --- 步骤 A: 计算当前点的 Jacobian, Hessian 和 Cost ---
+    double H = 0;
+    double g_neg = 0;  // J^T * (y - y_pred)
+    double current_cost = 0;
+
+    for (size_t i = 0; i < x_data.size(); ++i) {
+      double exp_ax = std::exp(a_est * x_data[i]);
+      double error = y_data[i] - exp_ax;
+      double J = x_data[i] * exp_ax;
+      H += J * J;
+      g_neg += J * error;
+      current_cost += 0.5 * error * error;
+    }
+
+    // --- 步骤 B: 求解 LM 方程 (H + lambda) * da = g_neg ---
+    double da = g_neg / (H + lambda);
+
+    // --- 步骤 C: 尝试更新并计算新 Cost ---
+    double a_new = a_est + da;
+    double new_cost = 0;
+    for (size_t i = 0; i < x_data.size(); ++i) {
+      double e = y_data[i] - std::exp(a_new * x_data[i]);
+      new_cost += 0.5 * e * e;
+    }
+
+    // --- 步骤 D: 计算增益比例 rho ---
+    double actual_reduction = current_cost - new_cost;
+    double predicted_reduction = 0.5 * da * (lambda * da + g_neg);
+    double rho = actual_reduction / (predicted_reduction + 1e-18);
+
+    // --- 步骤 E: 根据 rho 判断是否接受更新并调节 lambda ---
+    if (rho > 0) {
+      // 成功：接受更新参数
+      a_est = a_new;
+
+      // 调节 lambda 阈值逻辑
+      if (rho > 0.75) {
+        lambda *= 0.33;  // 预测很准，减小阻尼
+      } else if (rho < 0.25) {
+        lambda *= 2.0;  // 预测一般，增大阻尼
+      }
+      // 在 0.25 到 0.75 之间保持 lambda 不变
+
+      LOG_INFO("迭代 {}: [成功] a: {}, cost: {}, rho: {}, lambda: {}", iter,
+               a_est, new_cost, rho, lambda);
+
+      // 收敛判断
+      if (std::abs(da) < 1e-8) {
+        LOG_INFO("算法收敛。");
+        break;
+      }
+    } else {
+      // 失败：不更新 a_est，只增大 lambda
+      lambda *= 10.0;
+      LOG_INFO("迭代 {}: [失败] 拒绝更新, rho: {}, lambda 增大至: {}", iter,
+               rho, lambda);
+
+      if (lambda > 1e12) {
+        LOG_INFO("lambda 过大，停止优化。");
+        break;
+      }
+    }
+  }
+
+  LOG_INFO("最终估计结果 a_est: {} (真实值: 0.8)", a_est);
+}
+
+void CeresSolverUsage() {
+  // 1. 模拟数据准备 (真值 a = 0.8)
+  double a_true = 0.8;
+  std::vector<double> x_data, y_data;
+  for (int i = 0; i < 100; ++i) {
+    double x = i / 100.0;
+    x_data.push_back(x);
+    y_data.push_back(std::exp(a_true * x) + 0.01 * rand() / double(RAND_MAX));
+  }
+
+  // 2. 初始化待优化参数
+  double a_est = 0.0;
+
+  // 3. 构建 Ceres 问题
+  ceres::Problem problem;
+  for (size_t i = 0; i < x_data.size(); ++i) {
+    // 使用自动求导的代价函数<代价函数类, 残差维度, 参数维度>
+    ceres::CostFunction* cost_function =
+        new ceres::AutoDiffCostFunction<ExponentialResidual, 1, 1>(
+            new ExponentialResidual(x_data[i], y_data[i]));
+    // 向问题中添加残差块：代价函数, 核函数(null), 待优化参数地址
+    problem.AddResidualBlock(cost_function, nullptr, &a_est);
+  }
+
+  // 4. 配置求解器选项
+  ceres::Solver::Options options;
+  options.linear_solver_type = ceres::DENSE_QR;
+  options.minimizer_progress_to_stdout = true;
+  options.max_num_iterations = 50;
+
+  // 5. 求解
+  ceres::Solver::Summary summary;
+  LOG_INFO("Ceres 开始优化: 初始 a: {}", a_est);
+  ceres::Solve(options, &problem, &summary);
+
+  // 输出结果
+  LOG_INFO(
+      "Ceres 优化完成! 最终估计 a: {}, 迭代总数: {}, 初始误差: {}, 最终误差: "
+      "{}",
+      a_est, (int)summary.iterations.size(), summary.initial_cost,
+      summary.final_cost);
+  if (summary.termination_type == ceres::CONVERGENCE) {
+    LOG_INFO("状态: 算法已收敛, 误差偏移: {}", std::abs(a_est - a_true));
+  }
+}
+
 }  // namespace nonlinear_optimization

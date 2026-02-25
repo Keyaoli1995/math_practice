@@ -25,6 +25,7 @@ int main(int argc, char const* argv[]) {
   nonlinear_optimization::GaussNewtonUsage();
   nonlinear_optimization::LevenbergMarquardtUsage();
   nonlinear_optimization::CeresSolverUsage();
+  nonlinear_optimization::CeresPoseOptimizationUsage();
 
   // 程序结束前（可选但推荐）
   spdlog::shutdown();

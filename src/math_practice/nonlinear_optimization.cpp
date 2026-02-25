@@ -312,4 +312,87 @@ void CeresSolverUsage() {
   }
 }
 
+void CeresPoseOptimizationUsage() {
+  // 1. 模拟数据准备：生成一组真实位姿 (Ground Truth)
+  // 假设真实的旋转是绕 Z 轴旋转 45 度，平移是 (1.0, 2.0, 3.0)
+  Eigen::AngleAxisd gt_rotation_vector(M_PI / 4.0, Eigen::Vector3d(0, 0, 1));
+  Eigen::Quaterniond gt_q(gt_rotation_vector);
+  Eigen::Vector3d gt_t(1.0, 2.0, 3.0);
+
+  std::vector<Eigen::Vector3d> source_points, target_points;
+  srand(42);
+
+  // 生成 100 个随机三维点，并计算变换加噪声后的目标点
+  for (int i = 0; i < 100; ++i) {
+    Eigen::Vector3d p_src(10.0 * rand() / double(RAND_MAX),
+                          10.0 * rand() / double(RAND_MAX),
+                          10.0 * rand() / double(RAND_MAX));
+    source_points.push_back(p_src);
+
+    // 变换：p_tgt = R * p_src + t + noise
+    Eigen::Vector3d noise(0.05 * rand() / double(RAND_MAX),
+                          0.05 * rand() / double(RAND_MAX),
+                          0.05 * rand() / double(RAND_MAX));
+    Eigen::Vector3d p_tgt = gt_q * p_src + gt_t + noise;
+    target_points.push_back(p_tgt);
+  }
+
+  // 2. 初始化待优化的参数
+  // Eigen 四元数的内存布局是 [x, y, z, w]。初始化为单位四元数 (无旋转)
+  double q_est[4] = {0.0, 0.0, 0.0, 1.0};
+  // 初始化平移为 (0, 0, 0)
+  double t_est[3] = {0.0, 0.0, 0.0};
+
+  // 3. 构建 Ceres 问题
+  ceres::Problem problem;
+
+  // 重点：告诉 Ceres，q_est 是一个四元数，不能使用普通的加法更新
+  // 它必须在流形（Manifold）上进行乘法更新，以保证更新后依然是合法的单位四元数
+  // 注意：如果你使用的 Ceres 版本比较老（< 2.1），请将下面这行换成：
+  // problem.AddParameterBlock(q_est, 4, new
+  // ceres::EigenQuaternionParameterization());
+  problem.AddParameterBlock(q_est, 4, new ceres::EigenQuaternionManifold());
+  problem.AddParameterBlock(t_est,
+                            3);  // 平移向量用普通加法即可，不需要 Manifold
+
+  for (size_t i = 0; i < source_points.size(); ++i) {
+    // 自动求导：<代价函数类, 残差维度(3), 旋转参数维度(4), 平移参数维度(3)>
+    ceres::CostFunction* cost_function =
+        new ceres::AutoDiffCostFunction<PointToPointResidual, 3, 4, 3>(
+            new PointToPointResidual(source_points[i], target_points[i]));
+
+    problem.AddResidualBlock(cost_function, nullptr, q_est, t_est);
+  }
+
+  // 4. 配置求解器
+  ceres::Solver::Options options;
+  options.linear_solver_type = ceres::DENSE_QR;
+  options.minimizer_progress_to_stdout = true;
+  options.max_num_iterations = 50;
+
+  // 5. 求解
+  ceres::Solver::Summary summary;
+  LOG_INFO("Ceres 位姿优化开始! 初始平移: [{}, {}, {}]", t_est[0], t_est[1],
+           t_est[2]);
+  ceres::Solve(options, &problem, &summary);
+
+  // 6. 输出结果对比
+  LOG_INFO("Ceres 位姿优化完成! 迭代总数: {}, 初始误差: {}, 最终误差: {}",
+           (int)summary.iterations.size(), summary.initial_cost,
+           summary.final_cost);
+
+  if (summary.termination_type == ceres::CONVERGENCE) {
+    Eigen::Map<Eigen::Quaterniond> final_q(q_est);
+    LOG_INFO("状态: 算法已收敛");
+    LOG_INFO(
+        "真实平移 t: [1.0, 2.0, 3.0]  --> 估计平移 t: [{:.4f}, {:.4f}, {:.4f}]",
+        t_est[0], t_est[1], t_est[2]);
+    LOG_INFO(
+        "真实旋转 q: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] --> 估计旋转 q: [{:.4f}, "
+        "{:.4f}, {:.4f}, {:.4f}]",
+        gt_q.x(), gt_q.y(), gt_q.z(), gt_q.w(), final_q.x(), final_q.y(),
+        final_q.z(), final_q.w());
+  }
+}
+
 }  // namespace nonlinear_optimization

@@ -336,6 +336,10 @@ void CeresPoseOptimizationUsage() {
     Eigen::Vector3d p_tgt = gt_q * p_src + gt_t + noise;
     target_points.push_back(p_tgt);
   }
+  // 打印一些初始数据对比
+  LOG_INFO("source_points[0]: [{:.4f}, {:.4f}, {:.4f}] --> target_points[0]: [{:.4f}, {:.4f}, {:.4f}]",
+           source_points[0].x(), source_points[0].y(), source_points[0].z(),
+           target_points[0].x(), target_points[0].y(), target_points[0].z());
 
   // 2. 初始化待优化的参数
   // Eigen 四元数的内存布局是 [x, y, z, w]。初始化为单位四元数 (无旋转)

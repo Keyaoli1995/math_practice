@@ -266,6 +266,7 @@ void LevenbergMarquardtUsage() {
   LOG_INFO("最终估计结果 a_est: {} (真实值: 0.8)", a_est);
 }
 
+// test
 void CeresSolverUsage() {
   // 1. 模拟数据准备 (真值 a = 0.8)
   double a_true = 0.8;
